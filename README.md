@@ -1,7 +1,7 @@
 Additive FM Synth
 =================
 
-Additive FM synthesis using the Web MIDI API. Works in Chrome.
+Additive FM synthesis using the Web MIDI API. [Live demo](https://mmontag.github.io/additive-fm-synth) works in Chrome.
 Traditional FM synth is included for comparison.
 A proof of concept inspired by [nlogax](https://github.com/nlogax). 
 
