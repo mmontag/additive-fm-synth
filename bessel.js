@@ -1,5 +1,11 @@
 var M = Math;
-function _horner(arr, v) { return arr.reduce(function(z,w){return v * z + w;},0); };
+function _horner(arr, v) {
+  var z = 0;
+  for (var i = 0; i < arr.length; i++) {
+    z = v * z + arr[i];
+  }
+  return z;
+}
 function _bessel_iter(x, n, f0, f1, sign) {
   if(!sign) sign = -1;
   var tdx = 2 / x, f2;

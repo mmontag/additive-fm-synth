@@ -49,3 +49,20 @@ Envelope.prototype.render = function() {
 Envelope.prototype.noteOff = function() {
 	this.state = ENV_RELEASE;
 }
+
+Envelope.prototype.reset = function() {
+	this.state = ENV_ATTACK;
+	this.val = 0;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = {
+		Envelope: Envelope,
+		ENV_ATTACK: ENV_ATTACK,
+		ENV_DECAY: ENV_DECAY,
+		ENV_SUSTAIN: ENV_SUSTAIN,
+		ENV_RELEASE: ENV_RELEASE,
+		ENV_OFF: ENV_OFF
+	};
+}
+
