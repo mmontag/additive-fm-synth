@@ -35,13 +35,18 @@ proc.connect(ctx.destination);
 
 proc.onaudioprocess = function(e) {
 	var output = e.outputBuffer;
-	for (var channel = 0; channel < output.numberOfChannels; channel++) {
-		var chOut = output.getChannelData(channel);
-		for (var sample = 0, length = output.length; sample < length; sample++) {
-			chOut[sample] = 0.5 * (synth.render());
-		}
+	var numChannels = output.numberOfChannels;
+	var length = output.length;
+	var ch0 = output.getChannelData(0);
+
+	for (var sample = 0; sample < length; sample++) {
+		ch0[sample] = 0.5 * (synth.render());
 	}
-}
+
+	for (var channel = 1; channel < numChannels; channel++) {
+		output.getChannelData(channel).set(ch0);
+	}
+};
 
 // Setup frequency domain graph
 var frequencybox = new SpectrumBox(2048, 2048, "fftbox", ctx);
