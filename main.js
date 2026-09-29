@@ -8,6 +8,20 @@ var synth = new Synth(AdditiveFMVoice);
 var midi = new MIDI(synth);
 
 var ctx = new (window.AudioContext || window.webkitAudioContext)();
+var keyboard = new Keyboard(synth, ctx);
+
+$('#octave-down').on('click', function() {
+	keyboard.octaveDown();
+});
+$('#octave-up').on('click', function() {
+	keyboard.octaveUp();
+});
+
+$(document).on('click', function() {
+	if (ctx.state === 'suspended') {
+		ctx.resume();
+	}
+});
 var proc = ctx.createScriptProcessor(512, 1, 1);
 proc.connect(ctx.destination);
 

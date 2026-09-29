@@ -12,9 +12,9 @@ Synth.prototype.noteOn = function(note, velocity) {
 		// Create a new synth node
 		var frequency = this.frequencyFromNoteNumber(note);
 		this.voices[note] = new this.voiceClass(frequency, velocity);
-		// var e = document.getElementById( "k" + note );
-		// if (e)
-		// 	e.classList.add("pressed");
+		var e = document.getElementById( "k" + note );
+		if (e)
+			e.classList.add("pressed");
 	// }
 }
 
@@ -23,9 +23,9 @@ Synth.prototype.noteOff = function(note) {
 		// Shut off the note playing and clear it 
 		this.voices[note].noteOff();
 		// this.voices[note] = null;
-		// var e = document.getElementById( "k" + note );
-		// if (e)
-		// 	e.classList.remove("pressed");
+		var e = document.getElementById( "k" + note );
+		if (e)
+			e.classList.remove("pressed");
 	}
 }
 

@@ -1,9 +1,17 @@
 Additive FM Synth
 =================
 
-Additive FM synthesis using the Web MIDI API. [Live demo](https://mmontag.github.io/additive-fm-synth) works in Chrome.
+Additive FM synthesis using the Web MIDI API and computer keyboard (QWERTY musical typing). [Live demo](https://mmontag.github.io/additive-fm-synth) works in Chrome.
 Traditional FM synth is included for comparison.
 A proof of concept inspired by [nlogax](https://github.com/nlogax). 
+
+Keyboard Controls
+-----------------
+Play notes directly using your computer keyboard:
+- **White keys**: `A`, `S`, `D`, `F`, `G`, `H`, `J`, `K`, `L`, `;`, `'`
+- **Black keys**: `W`, `E`, `T`, `Y`, `U`, `O`, `P`
+- **Octave shift**: `Z` (down), `X` (up)
+
 
 The problem: FM synthesis is awesome, but suffers from aliasing. When sidebands go too high, they get reflected back down from Nyquist and jam up your spectrum.
 

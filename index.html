@@ -3,9 +3,95 @@
 	<title>Additive FM Synth</title>
 </head>
 <style>
-body { font-family: Helvetica; margin: 20px; }
+body { font-family: Helvetica, Arial, sans-serif; margin: 20px; }
 .canvas-title { position: absolute; font-weight: 500; font-size: 12px; padding: 3px; }
 canvas { display: block; }
+
+#keyboard-panel { max-width: 1024px; margin-top: 15px; }
+#keyboard-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: #333; }
+#keyboard-controls button {
+	padding: 4px 10px;
+	border: 1px solid #bbb;
+	background: #f0f0f0;
+	border-radius: 3px;
+	cursor: pointer;
+	font-size: 12px;
+}
+#keyboard-controls button:hover { background: #e0e0e0; }
+#octave-display { font-weight: bold; font-size: 15px; min-width: 16px; text-align: center; }
+.keyboard-hint { margin-left: 12px; font-size: 12px; color: #666; }
+
+.piano-keyboard {
+	position: relative;
+	display: flex;
+	height: 140px;
+	width: 1024px;
+	user-select: none;
+	-webkit-user-select: none;
+}
+.piano-key {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	cursor: pointer;
+}
+.white-key {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	background: #ffffff;
+	border: 1px solid #aaa;
+	border-right: none;
+	border-radius: 0 0 4px 4px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	padding-bottom: 8px;
+	z-index: 1;
+}
+.white-key:last-child {
+	border-right: 1px solid #aaa;
+}
+.white-key.pressed {
+	background: #ffe066 !important;
+	box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+	transform: translateY(1px);
+}
+.black-key {
+	position: absolute;
+	width: 34px;
+	height: 60%;
+	background: #2b2b2b;
+	border: 1px solid #111;
+	border-radius: 0 0 3px 3px;
+	box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+	z-index: 2;
+	padding-bottom: 6px;
+	color: #fff;
+}
+.black-key.pressed {
+	background: #f59f00 !important;
+	box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+	transform: translateY(1px);
+}
+.key-note-name {
+	font-size: 10px;
+	color: #888;
+	pointer-events: none;
+}
+.black-key .key-note-name {
+	color: #bbb;
+}
+.key-badge {
+	font-size: 13px;
+	font-weight: bold;
+	color: #222;
+	margin-top: 2px;
+	pointer-events: none;
+}
+.black-key .key-badge {
+	color: #fff;
+}
 </style>
 <body>
 	<p>
@@ -13,17 +99,28 @@ canvas { display: block; }
 		<input type="checkbox" id="analysis" checked></input><label for="analysis">Analysis</label>
 	</p>
 	<div class="boxes">
-	<div id="canvasbox">
-		<span class="canvas-title">Magnitude Spectrum</span>
-		<canvas id="fftbox" width=1024 height=100></canvas>
+		<div id="canvasbox">
+			<span class="canvas-title">Magnitude Spectrum</span>
+			<canvas id="fftbox" width=1024 height=100></canvas>
 <!--
-		<span class="canvas-title">Bessel Spectrum</span>
-		<canvas id="sidebands" width=1024 height=100></canvas>
+			<span class="canvas-title">Bessel Spectrum</span>
+			<canvas id="sidebands" width=1024 height=100></canvas>
 -->
-		<span class="canvas-title">Waveform</span>
-		<canvas id="wavebox" width=1024 height=50></canvas>
+			<span class="canvas-title">Waveform</span>
+			<canvas id="wavebox" width=1024 height=50></canvas>
+		</div>
+		<div id="keyboard-panel">
+			<div id="keyboard-controls">
+				<span>Octave:</span>
+				<button id="octave-down" title="Lower octave (Z)">&#x25C0; Z</button>
+				<span id="octave-display">4</span>
+				<button id="octave-up" title="Higher octave (X)">X &#x25B6;</button>
+				<span class="keyboard-hint">QWERTY keys: <strong>A – '</strong> (white keys), <strong>W E T Y U O P</strong> (black keys) | <strong>Z / X</strong> (octave down / up)</span>
+			</div>
+			<div id="keyboard-keys" class="piano-keyboard"></div>
+		</div>
 	</div>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="bessel.js"></script>
 	<script src="spectrumBox.js"></script>
 	<script src="envelope.js"></script>
@@ -32,6 +129,7 @@ canvas { display: block; }
 	<script src="additivefmvoice.js"></script>
 	<script src="synth.js"></script>
 	<script src="midi.js"></script>
+	<script src="keyboard.js"></script>
 	<script src="main.js"></script>
 </body>
 </html>
