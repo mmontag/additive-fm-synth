@@ -4,12 +4,14 @@
  */
 
 (function(root, factory) {
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory();
-  } else {
-    root.Keyboard = factory();
+  var KeyboardClass = factory();
+  if (typeof root !== 'undefined') {
+    root.Keyboard = KeyboardClass;
   }
-})(typeof window !== 'undefined' ? window : this, function() {
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = KeyboardClass;
+  }
+})(typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : this), function() {
   'use strict';
 
   // Musical Typing Mapping (Ableton / GarageBand layout)

@@ -4,12 +4,18 @@
  * with anti-aliasing above Nyquist.
  */
 
+var TWO_PI = Math.PI * 2;
+var PERIOD = typeof PERIOD !== 'undefined' ? PERIOD : TWO_PI;
+var MAX_SIDEBANDS = typeof MAX_SIDEBANDS !== 'undefined' ? MAX_SIDEBANDS : 50;
+var SAMPLE_RATE = typeof SAMPLE_RATE !== 'undefined' ? SAMPLE_RATE : 44100;
+var ANTI_ALIAS = typeof ANTI_ALIAS !== 'undefined' ? ANTI_ALIAS : true;
+
 var SINE_TABLE_SIZE = 8192;
 var SINE_TABLE = new Float32Array(SINE_TABLE_SIZE);
 for (var _s = 0; _s < SINE_TABLE_SIZE; _s++) {
-  SINE_TABLE[_s] = Math.sin((_s / SINE_TABLE_SIZE) * PERIOD);
+  SINE_TABLE[_s] = Math.sin((_s / SINE_TABLE_SIZE) * TWO_PI);
 }
-var SINE_RAD_TO_INDEX = SINE_TABLE_SIZE / PERIOD;
+var SINE_RAD_TO_INDEX = SINE_TABLE_SIZE / TWO_PI;
 var SINE_MASK = SINE_TABLE_SIZE - 1;
 
 function AdditiveFMVoice(frequency, velocity) {
@@ -70,19 +76,19 @@ AdditiveFMVoice.prototype.update = function() {
   var index = this.indexMin + this.indexEnv.val * (this.indexMax - this.indexMin);
   var carrier = this.frequency;
   var mod = this.frequency / 4;
-  var centerIdx = MAX_SIDEBANDS / 2;
+  var centerIdx = Math.floor(MAX_SIDEBANDS / 2);
   var nyquist = SAMPLE_RATE / 2;
 
   var activeCount = 0;
 
-  for (var order = 0; order < MAX_SIDEBANDS / 2; order++) {
+  for (var order = 0; order < Math.floor(MAX_SIDEBANDS / 2); order++) {
     var amp = besselj(index, order);
 
     // Upper sideband
     var upperIdx = centerIdx + order;
     var uFreq = carrier + mod * order;
     this.freqs[upperIdx] = uFreq;
-    this.phaseSteps[upperIdx] = (PERIOD * uFreq) / SAMPLE_RATE;
+    this.phaseSteps[upperIdx] = (TWO_PI * uFreq) / SAMPLE_RATE;
     var uAmpTo = ANTI_ALIAS ? (uFreq > nyquist ? 0 : amp) : amp;
     this.ampSteps[upperIdx] = (uAmpTo - this.currentAmps[upperIdx]) * this.updateIntervalInverse;
     this.ampTos[upperIdx] = uAmpTo;
@@ -94,7 +100,7 @@ AdditiveFMVoice.prototype.update = function() {
     var lowerIdx = centerIdx - order;
     var lFreq = carrier - mod * order;
     this.freqs[lowerIdx] = lFreq;
-    this.phaseSteps[lowerIdx] = (PERIOD * lFreq) / SAMPLE_RATE;
+    this.phaseSteps[lowerIdx] = (TWO_PI * lFreq) / SAMPLE_RATE;
     var sign = (order % 2 === 1) ? -1 : 1;
     var lAmpTo = ANTI_ALIAS ? sign * (Math.abs(lFreq) > nyquist ? 0 : amp) : sign * amp;
     this.ampSteps[lowerIdx] = (lAmpTo - this.currentAmps[lowerIdx]) * this.updateIntervalInverse;
@@ -121,8 +127,8 @@ AdditiveFMVoice.prototype.render = function() {
     var idx = (this.phases[i] * SINE_RAD_TO_INDEX) & SINE_MASK;
     val += this.currentAmps[i] * SINE_TABLE[idx];
     this.phases[i] += this.phaseSteps[i];
-    if (this.phases[i] >= PERIOD) this.phases[i] -= PERIOD;
-    else if (this.phases[i] < 0) this.phases[i] += PERIOD;
+    if (this.phases[i] >= TWO_PI) this.phases[i] -= TWO_PI;
+    else if (this.phases[i] < 0) this.phases[i] += TWO_PI;
   }
   return this.velocity * this.ampEnv.render() * val;
 };

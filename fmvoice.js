@@ -29,3 +29,17 @@ FMVoice.prototype.noteOff = function() {
 	this.ampEnv.noteOff();
 	this.indexEnv.noteOff();
 }
+
+FMVoice.prototype.reset = function(frequency, velocity, note) {
+	this.frequency = frequency;
+	this.velocity = typeof velocity === 'number' ? velocity : 1.0;
+	this.note = typeof note === 'number' ? note : -1;
+	this.ampEnv.reset();
+	this.indexEnv.reset();
+	this.op1 = new Operator(frequency, 0);
+	this.op2 = new Operator(frequency / 4, this.indexMin);
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = FMVoice;
+}
