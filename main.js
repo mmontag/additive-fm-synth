@@ -7,7 +7,15 @@ var ANTI_ALIAS = true;
 var synth = new Synth(AdditiveFMVoice);
 var midi = new MIDI(synth);
 
-var ctx = new (window.AudioContext || window.webkitAudioContext)();
+var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+var ctx;
+try {
+	ctx = new AudioContextClass({ latencyHint: 'playback' });
+} catch (e) {
+	ctx = new AudioContextClass();
+}
+SAMPLE_RATE = ctx.sampleRate || SAMPLE_RATE;
+
 var keyboard = new Keyboard(synth, ctx);
 
 $('#octave-down').on('click', function() {
