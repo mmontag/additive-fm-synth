@@ -97,6 +97,9 @@ console.log(`Heap delta after 400 note events: ${heapDeltaKb.toFixed(2)} KB`);
 assert(heapDeltaKb < 500, 'Memory growth should be negligible (< 500 KB across 400 notes)');
 console.log('✔ Test 6 passed: Zero object churn validated during rapid note cycles');
 
+// Flush any lingering releasing voices before next tests
+for (let s = 0; s < 10000; s++) synth.render();
+
 // Test 7: Audio rendering output check
 synth.noteOn(60, 1.0);
 const buffer = new Float32Array(512);
@@ -104,6 +107,7 @@ for (let i = 0; i < 512; i++) {
   buffer[i] = 0.5 * synth.render();
 }
 synth.noteOff(60);
+for (let s = 0; s < 10000; s++) synth.render();
 let maxAmp = 0;
 for (let i = 0; i < 512; i++) {
   const abs = Math.abs(buffer[i]);
@@ -114,5 +118,19 @@ assert(!isNaN(maxAmp), 'Rendered audio buffer should not be NaN');
 assert(isFinite(maxAmp), 'Rendered audio buffer should be finite');
 console.log(`Peak rendered buffer amplitude: ${maxAmp.toFixed(3)}`);
 console.log('✔ Test 7 passed: Audio buffer produces clean signal');
+
+// Test 8: Sustained note stability (verify no blowup over 5 seconds)
+synth.noteOn(60, 1.0);
+let sustainedPeak = 0;
+for (let s = 0; s < 44100 * 5; s++) {
+  const sample = Math.abs(0.5 * synth.render());
+  if (sample > sustainedPeak) sustainedPeak = sample;
+}
+synth.noteOff(60);
+for (let s = 0; s < 5000; s++) synth.render();
+console.log(`Peak amplitude over 5s sustained note: ${sustainedPeak.toFixed(3)}`);
+assert(sustainedPeak > 0, 'Sustained note should produce sound');
+assert(sustainedPeak < 1.5, `Sustained note amplitude must remain stable, got ${sustainedPeak}`);
+console.log('✔ Test 8 passed: 5-second sustained note remains completely stable without blowup');
 
 console.log('\nAll Audio Engine & Voice Pooling tests passed successfully! 🎉');

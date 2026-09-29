@@ -32,12 +32,8 @@ function AdditiveFMVoice(frequency, velocity) {
   this.freqs = new Float32Array(this.numBands);
   this.phases = new Float32Array(this.numBands);
   this.phaseSteps = new Float32Array(this.numBands);
-  this.currentAmps = new Float32Array(this.numBands);
-  this.ampTos = new Float32Array(this.numBands);
-  this.ampSteps = new Float32Array(this.numBands);
-
-  this.activeIndices = new Int32Array(this.numBands);
-  this.activeCount = 0;
+  this.ampsFrom = new Float32Array(this.numBands);
+  this.ampsTo = new Float32Array(this.numBands);
 
   this.frequency = 0;
   this.velocity = 0;
@@ -59,16 +55,14 @@ AdditiveFMVoice.prototype.reset = function(frequency, velocity, note) {
 
   for (var i = 0; i < this.numBands; i++) {
     this.phases[i] = 0;
-    this.currentAmps[i] = 0;
-    this.ampTos[i] = 0;
-    this.ampSteps[i] = 0;
+    this.ampsFrom[i] = 0;
+    this.ampsTo[i] = 0;
   }
 
   this.indexEnv.render();
   this.update();
   for (var i = 0; i < this.numBands; i++) {
-    this.currentAmps[i] = this.ampTos[i];
-    this.ampSteps[i] = 0;
+    this.ampsFrom[i] = this.ampsTo[i];
   }
 };
 
@@ -79,37 +73,38 @@ AdditiveFMVoice.prototype.update = function() {
   var centerIdx = Math.floor(MAX_SIDEBANDS / 2);
   var nyquist = SAMPLE_RATE / 2;
 
-  var activeCount = 0;
+  // Order 0: Carrier frequency
+  var amp0 = besselj(index, 0);
+  this.freqs[centerIdx] = carrier;
+  this.phaseSteps[centerIdx] = (TWO_PI * carrier) / SAMPLE_RATE;
+  this.ampsFrom[centerIdx] = this.ampsTo[centerIdx];
+  this.ampsTo[centerIdx] = ANTI_ALIAS ? (carrier > nyquist ? 0 : amp0) : amp0;
 
-  for (var order = 0; order < Math.floor(MAX_SIDEBANDS / 2); order++) {
+  // Orders 1 to 24 (sidebands)
+  for (var order = 1; order <= centerIdx; order++) {
     var amp = besselj(index, order);
 
     // Upper sideband
     var upperIdx = centerIdx + order;
-    var uFreq = carrier + mod * order;
-    this.freqs[upperIdx] = uFreq;
-    this.phaseSteps[upperIdx] = (TWO_PI * uFreq) / SAMPLE_RATE;
-    var uAmpTo = ANTI_ALIAS ? (uFreq > nyquist ? 0 : amp) : amp;
-    this.ampSteps[upperIdx] = (uAmpTo - this.currentAmps[upperIdx]) * this.updateIntervalInverse;
-    this.ampTos[upperIdx] = uAmpTo;
-    if (Math.abs(this.currentAmps[upperIdx]) > 1e-4 || Math.abs(uAmpTo) > 1e-4) {
-      this.activeIndices[activeCount++] = upperIdx;
+    if (upperIdx < this.numBands) {
+      var uFreq = carrier + mod * order;
+      this.freqs[upperIdx] = uFreq;
+      this.phaseSteps[upperIdx] = (TWO_PI * uFreq) / SAMPLE_RATE;
+      this.ampsFrom[upperIdx] = this.ampsTo[upperIdx];
+      this.ampsTo[upperIdx] = ANTI_ALIAS ? (uFreq > nyquist ? 0 : amp) : amp;
     }
 
     // Lower sideband
     var lowerIdx = centerIdx - order;
-    var lFreq = carrier - mod * order;
-    this.freqs[lowerIdx] = lFreq;
-    this.phaseSteps[lowerIdx] = (TWO_PI * lFreq) / SAMPLE_RATE;
-    var sign = (order % 2 === 1) ? -1 : 1;
-    var lAmpTo = ANTI_ALIAS ? sign * (Math.abs(lFreq) > nyquist ? 0 : amp) : sign * amp;
-    this.ampSteps[lowerIdx] = (lAmpTo - this.currentAmps[lowerIdx]) * this.updateIntervalInverse;
-    this.ampTos[lowerIdx] = lAmpTo;
-    if (Math.abs(this.currentAmps[lowerIdx]) > 1e-4 || Math.abs(lAmpTo) > 1e-4) {
-      this.activeIndices[activeCount++] = lowerIdx;
+    if (lowerIdx >= 0) {
+      var lFreq = carrier - mod * order;
+      this.freqs[lowerIdx] = lFreq;
+      this.phaseSteps[lowerIdx] = (TWO_PI * lFreq) / SAMPLE_RATE;
+      var sign = (order % 2 === 1) ? -1 : 1;
+      this.ampsFrom[lowerIdx] = this.ampsTo[lowerIdx];
+      this.ampsTo[lowerIdx] = ANTI_ALIAS ? (Math.abs(lFreq) > nyquist ? 0 : sign * amp) : sign * amp;
     }
   }
-  this.activeCount = activeCount;
 };
 
 AdditiveFMVoice.prototype.render = function() {
@@ -119,16 +114,19 @@ AdditiveFMVoice.prototype.render = function() {
     this.updateCounter = 0;
   }
 
+  var updateRemaining = this.updateInterval - this.updateCounter;
+  var inv = this.updateIntervalInverse;
   var val = 0;
-  var count = this.activeCount;
-  for (var k = 0; k < count; k++) {
-    var i = this.activeIndices[k];
-    this.currentAmps[i] += this.ampSteps[i];
-    var idx = (this.phases[i] * SINE_RAD_TO_INDEX) & SINE_MASK;
-    val += this.currentAmps[i] * SINE_TABLE[idx];
-    this.phases[i] += this.phaseSteps[i];
-    if (this.phases[i] >= TWO_PI) this.phases[i] -= TWO_PI;
-    else if (this.phases[i] < 0) this.phases[i] += TWO_PI;
+
+  for (var i = 0; i < this.numBands; i++) {
+    if (this.freqs[i] !== 0) {
+      var amp = (this.ampsFrom[i] * updateRemaining + this.ampsTo[i] * this.updateCounter) * inv;
+      var idx = (this.phases[i] * SINE_RAD_TO_INDEX) & SINE_MASK;
+      val += amp * SINE_TABLE[idx];
+      this.phases[i] += this.phaseSteps[i];
+      if (this.phases[i] >= TWO_PI) this.phases[i] -= TWO_PI;
+      else if (this.phases[i] < 0) this.phases[i] += TWO_PI;
+    }
   }
   return this.velocity * this.ampEnv.render() * val;
 };
